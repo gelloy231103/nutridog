@@ -1,4 +1,5 @@
-﻿ using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 #endif
@@ -75,6 +76,8 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition = false;
 
+        [SerializeField] private ObjectPickup objectPickup;
+
         // cinemachine
         private float _cinemachineTargetYaw;
         private float _cinemachineTargetPitch;
@@ -97,8 +100,10 @@ namespace StarterAssets
         private int _animIDJump;
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
+        private int _animIDPutDown;
+        private int _animIDPickUp;
 
-#if ENABLE_INPUT_SYSTEM 
+#if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
 #endif
         private Animator _animator;
@@ -134,6 +139,12 @@ namespace StarterAssets
 
         private void Start()
         {
+            if (objectPickup == null)
+    {
+        objectPickup = GetComponent<ObjectPickup>();        // same GameObject
+        // OR
+        // objectPickup = GetComponentInChildren<ObjectPickup>(); // if it’s a child
+    }
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -152,14 +163,68 @@ namespace StarterAssets
             _fallTimeoutDelta = FallTimeout;
         }
 
+
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+            // Handle crouch cancel first (before jump processing)
+            HandleCrouchCancel();
+
             JumpAndGravity();
             GroundedCheck();
             Move();
+
+    if (_input.pickUp && Grounded && objectPickup != null && !objectPickup.iHaveSomething && objectPickup.whatCanIPickup != null)
+    {
+        _animator.SetTrigger(_animIDPickUp);
+        _input.pickUp = false;
+    }
+
+    if (_input.dropOff && Grounded && objectPickup != null && objectPickup.iHaveSomething)
+    {
+        _animator.SetTrigger(_animIDPutDown);
+        _input.dropOff = false;
+    }
+    
+            Vector3 horizontalVelocity = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z);
+            bool isMoving = horizontalVelocity.magnitude > 0.1f;
+
+
+            bool isCrawling = _input.crouch && isMoving;
+
+            _animator.SetBool("IsCrouching", _input.crouch);
+            _animator.SetBool("IsCrawling", isCrawling);
+            _animator.SetBool("IsMoving", isMoving);
+
         }
+
+        private void HandleCrouchCancel()
+        {
+            // Cancel crouch when jumping
+            if (_input.jump && _input.crouch)
+            {
+                _input.crouch = false;
+                _animator.SetBool("IsCrouching", false);
+                _animator.SetBool("IsCrawling", false);
+            }
+
+            // Cancel crouch when sprinting
+            if (_input.sprint && _input.crouch)
+            {
+                _input.crouch = false;
+                _animator.SetBool("IsCrouching", false);
+                _animator.SetBool("IsCrawling", false);
+            }
+
+            // Force exit crawl if trying to stand up
+            if (!_input.crouch && (_animator.GetBool("IsCrawling") || _animator.GetBool("IsCrouching")))
+            {
+                _animator.SetBool("IsCrouching", false);
+                _animator.SetBool("IsCrawling", false);
+            }
+        }
+
 
         private void LateUpdate()
         {
@@ -173,6 +238,8 @@ namespace StarterAssets
             _animIDJump = Animator.StringToHash("Jump");
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            _animIDPickUp = Animator.StringToHash("PickUp");
+            _animIDPutDown = Animator.StringToHash("PutDown");
         }
 
         private void GroundedCheck()
@@ -347,6 +414,7 @@ namespace StarterAssets
                 _verticalVelocity += Gravity * Time.deltaTime;
             }
         }
+
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
         {

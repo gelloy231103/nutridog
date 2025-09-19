@@ -20,6 +20,11 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+		[Header("Custom Animation Inputs")]
+		public bool pickUp;
+		public bool dropOff;
+		public bool crouch;
+
 #if ENABLE_INPUT_SYSTEM
 		public void OnMove(InputValue value)
 		{
@@ -28,7 +33,7 @@ namespace StarterAssets
 
 		public void OnLook(InputValue value)
 		{
-			if(cursorInputForLook)
+			if (cursorInputForLook)
 			{
 				LookInput(value.Get<Vector2>());
 			}
@@ -45,11 +50,23 @@ namespace StarterAssets
 		}
 #endif
 
+#if ENABLE_INPUT_SYSTEM
+public void OnDropOff(InputValue value)
+{
+    DropOffInput(value.isPressed);
+}
+#endif
+
+public void DropOffInput(bool newDropOffState)
+{
+    dropOff = newDropOffState;
+}
+
 
 		public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
-		} 
+		}
 
 		public void LookInput(Vector2 newLookDirection)
 		{
@@ -75,6 +92,10 @@ namespace StarterAssets
 		{
 			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
 		}
+		
+		// ---- UI Buttons can call these ----
+		public void OnPickUpButton() => pickUp = true;
+		public void OnDropoffButton() => dropOff = true;
+        public void OnCrouchButton() => crouch = !crouch;  // toggle
 	}
-	
 }

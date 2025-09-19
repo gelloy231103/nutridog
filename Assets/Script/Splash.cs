@@ -1,18 +1,16 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem; // New Input System namespace
+using UnityEngine.InputSystem;
 
 public class Splash : MonoBehaviour
 {
     void Update()
     {
-        // Detect mouse click
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             LoadNextScene();
         }
 
-        // Detect screen touch
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
         {
             LoadNextScene();
@@ -23,11 +21,11 @@ public class Splash : MonoBehaviour
     {
         if (PlayerPrefs.HasKey("Username") && !string.IsNullOrEmpty(PlayerPrefs.GetString("Username")))
         {
-            SceneManager.LoadScene("WelcomeScene"); // Username exists
+            SceneManager.LoadScene("Menu"); 
         }
         else
         {
-            SceneManager.LoadScene("UsernameInput"); // Ask for username
+            SceneManager.LoadScene("UsernameInput"); 
         }
     }
 }

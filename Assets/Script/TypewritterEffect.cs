@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.InputSystem;
 
 public class TypewriterEffect : MonoBehaviour
 {
@@ -46,7 +47,7 @@ public class TypewriterEffect : MonoBehaviour
     void Update()
     {
         // Check for mouse click or touch to skip typing
-        if (isTyping && (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)))
+        if (Mouse.current.leftButton.wasPressedThisFrame || Touchscreen.current?.primaryTouch.press.wasPressedThisFrame == true)
         {
             SkipTyping();
         }

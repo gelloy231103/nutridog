@@ -163,6 +163,33 @@ namespace StarterAssets
             _fallTimeoutDelta = FallTimeout;
         }
 
+private IEnumerator PickupWithAnimation()
+{
+    _animator.SetTrigger(_animIDPickUp);
+    _input.pickUp = false;
+    
+    // Wait for the animation to reach the point where the hand grabs
+    yield return new WaitForSeconds(0.5f); // Adjust this time based on your animation
+    
+    if (objectPickup != null)
+    {
+        objectPickup.ExecutePickup();
+    }
+}
+
+private IEnumerator DropWithAnimation()
+{
+    _animator.SetTrigger(_animIDPutDown);
+    _input.dropOff = false;
+    
+    // Wait for the animation to reach the point where the hand releases
+    yield return new WaitForSeconds(0.5f); // Adjust this time based on your animation
+    
+    if (objectPickup != null)
+    {
+        objectPickup.ExecuteDrop();
+    }
+}
 
         private void Update()
         {
@@ -175,18 +202,15 @@ namespace StarterAssets
             GroundedCheck();
             Move();
 
-    if (_input.pickUp && Grounded && objectPickup != null && !objectPickup.iHaveSomething && objectPickup.whatCanIPickup != null)
-    {
-        _animator.SetTrigger(_animIDPickUp);
-        _input.pickUp = false;
-    }
+           if (_input.pickUp && Grounded && objectPickup != null && !objectPickup.iHaveSomething && objectPickup.whatCanIPickup != null)
+{
+    StartCoroutine(PickupWithAnimation());
+}
 
-    if (_input.dropOff && Grounded && objectPickup != null && objectPickup.iHaveSomething)
-    {
-        _animator.SetTrigger(_animIDPutDown);
-        _input.dropOff = false;
-    }
-    
+if (_input.dropOff && Grounded && objectPickup != null && objectPickup.iHaveSomething)
+{
+    StartCoroutine(DropWithAnimation());
+}
             Vector3 horizontalVelocity = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z);
             bool isMoving = horizontalVelocity.magnitude > 0.1f;
 

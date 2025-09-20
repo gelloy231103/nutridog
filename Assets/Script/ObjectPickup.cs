@@ -7,58 +7,62 @@ public class ObjectPickup : MonoBehaviour
     public GameObject playerRightHand;
     public bool iHaveSomething = false;
 
-    private bool canToggle = true;
+    [Header("Pickup Settings")]
+    public float pickupCooldown = 0.5f;
+    
+    private bool canPickup = true;
+    private Coroutine cooldownCoroutine;
 
-    void Update() { }
-
-    public void PickUpObject()
+    // This method will be called by the animation event
+    public void ExecutePickup()
     {
-        if (!canToggle || iHaveSomething) return; 
+        if (!canPickup || iHaveSomething || whatCanIPickup == null) return;
 
-        if (whatCanIPickup != null)
-        {
-            whatCanIPickup.transform.SetParent(playerRightHand.transform);
-            whatCanIPickup.transform.localScale = new Vector3(5f, 5f, 5f);
-            whatCanIPickup.transform.localPosition = Vector3.zero;
+        whatCanIPickup.transform.SetParent(playerRightHand.transform);
+        whatCanIPickup.transform.localScale = new Vector3(5f, 5f, 5f);
+        whatCanIPickup.transform.localPosition = Vector3.zero;
 
-            Rigidbody rb = whatCanIPickup.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.isKinematic = true;
-                rb.useGravity = false;
-            }
-            iHaveSomething = true;
-        }
-        else
+        Rigidbody rb = whatCanIPickup.GetComponent<Rigidbody>();
+        if (rb != null)
         {
-            Debug.Log("I can't pick up anything");
+            rb.isKinematic = true;
+            rb.useGravity = false;
         }
+        iHaveSomething = true;
+        
+        Debug.Log("Picked up: " + whatCanIPickup.name);
     }
 
-    public void DropObject()
-{
-    if (!canToggle || !iHaveSomething) return;
-
-    whatCanIPickup.transform.parent = null;
-
-    Rigidbody rb = whatCanIPickup.GetComponent<Rigidbody>();
-    if (rb != null)
+    // This method will be called by the animation event
+    public void ExecuteDrop()
     {
-        rb.isKinematic = false;
-        rb.useGravity = true;
+        if (!canPickup || !iHaveSomething || whatCanIPickup == null) return;
+
+        whatCanIPickup.transform.parent = null;
+
+        Rigidbody rb = whatCanIPickup.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+        }
+
+        iHaveSomething = false;
+        
+        // Start cooldown after dropping
+        if (cooldownCoroutine != null)
+        {
+            StopCoroutine(cooldownCoroutine);
+        }
+        
+        Debug.Log("Dropped: " + whatCanIPickup.name);
+        whatCanIPickup = null;
     }
 
-    iHaveSomething = false;
-}
-
-
-
-
-  private bool justDropped = false;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (justDropped) return;   // prevent instant re-pickup
+        if (!canPickup) return;
 
         if (other.CompareTag("PickableObject") && !iHaveSomething)
         {
@@ -66,8 +70,6 @@ public class ObjectPickup : MonoBehaviour
             Debug.Log("It's pickable: " + other.name);
         }
     }
-
-
 
     private void OnTriggerExit(Collider other)
     {
